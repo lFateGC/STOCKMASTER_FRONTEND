@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent } from 'react';
+import { useState, useRef, useEffect, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
@@ -6,6 +6,7 @@ import { useAuth } from '../hooks/useAuth';
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -13,10 +14,18 @@ export default function Login() {
   const { setSession } = useAuth();
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('sm_remembered_email');
+    if (savedEmail) {
+      setEmail(savedEmail);
+      setRemember(true);
+    }
+  }, []);
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email.trim() || !password.trim()) {
-      setError('Por favor complete todos los campos requeridos.');
+      setError('Por favor ingresa tu correo y contraseña.');
       return;
     }
     setLoading(true);
@@ -31,101 +40,119 @@ export default function Login() {
       return;
     }
 
+    if (remember) {
+      localStorage.setItem('sm_remembered_email', email.trim());
+    } else {
+      localStorage.removeItem('sm_remembered_email');
+    }
+
     setSession(result.session);
     navigate('/');
   };
 
   return (
-    <div className="container-fluid p-0 min-vh-100 d-flex flex-column flex-lg-row" style={{ backgroundColor: '#f8fafc' }}>
-      {/* Panel Izquierdo: Presentación Institucional y Valor del ERP (visible en desktop) */}
+    <div
+      className="d-flex w-100"
+      style={{
+        height: '100vh',
+        maxHeight: '100vh',
+        overflow: 'hidden',
+        backgroundColor: '#ffffff',
+      }}
+    >
+      {/* Panel Izquierdo: Presentación Institucional (ocupa el alto completo sin scroll) */}
       <div
-        className="d-none d-lg-flex col-lg-6 col-xl-7 flex-column justify-content-between p-5 text-white position-relative"
+        className="d-none d-lg-flex col-lg-6 col-xl-7 flex-column justify-content-between p-4 p-xl-5 text-white"
         style={{
-          background: 'linear-gradient(140deg, #090e17 0%, #0f172a 50%, #1e293b 100%)',
-          borderRight: '1px solid #334155',
+          background: 'linear-gradient(135deg, #090e17 0%, #0f172a 60%, #1e293b 100%)',
+          borderRight: '1px solid #1e293b',
+          height: '100vh',
         }}
       >
-        <div>
-          {/* Logo y Marca */}
-          <div className="d-flex align-items-center gap-3 mb-5">
-            <svg width="42" height="42" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="40" height="40" rx="10" fill="#2563eb" />
-              <path d="M20 9L29 14.2V25.8L20 31L11 25.8V14.2L20 9Z" stroke="#93c5fd" strokeWidth="2" strokeLinejoin="round" />
-              <path d="M20 9V20M20 20L29 14.2M20 20L11 14.2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M20 20V31" stroke="#bfdbfe" strokeWidth="2" strokeLinecap="round" />
-            </svg>
-            <div>
-              <div className="h4 mb-0 fw-bold tracking-tight text-white">StockMaster</div>
-              <span className="badge bg-primary bg-opacity-25 text-info border border-info border-opacity-25 py-1 px-2 fw-medium" style={{ fontSize: '.7rem', letterSpacing: '.05em' }}>
-                SISTEMA ERP &bull; ALMACÉN &bull; POS
-              </span>
-            </div>
+        {/* Cabecera / Identidad */}
+        <div className="d-flex align-items-center gap-3">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="flex-shrink-0">
+            <rect width="40" height="40" rx="10" fill="#2563eb" />
+            <path d="M20 9L29 14.2V25.8L20 31L11 25.8V14.2L20 9Z" stroke="#93c5fd" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M20 9V20M20 20L29 14.2M20 20L11 14.2" stroke="#ffffff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M20 20V31" stroke="#bfdbfe" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <div>
+            <div className="h4 mb-0 fw-bold text-white lh-1">StockMaster</div>
+            <span className="text-secondary small" style={{ fontSize: '.75rem', letterSpacing: '.04em' }}>
+              Sistema de Gestión Comercial y Almacén
+            </span>
           </div>
+        </div>
 
-          {/* Mensaje de propuesta */}
-          <div className="mt-5 pt-3" style={{ maxWidth: 540 }}>
-            <h1 className="display-6 fw-bold text-white mb-3" style={{ lineHeight: 1.25, letterSpacing: '-0.02em' }}>
-              Gestión centralizada de existencias, ventas y abastecimiento.
-            </h1>
-            <p className="lead text-slate-300 fs-6 mb-4" style={{ color: '#94a3b8', lineHeight: 1.6 }}>
-              Plataforma empresarial de control de inventario con kardex valorizado, punto de venta transaccional y auditoría integral de operaciones.
-            </p>
+        {/* Contenido Central: Propuesta de Valor */}
+        <div style={{ maxWidth: 480 }}>
+          <h1 className="h3 fw-bold text-white mb-3" style={{ letterSpacing: '-0.02em', lineHeight: 1.3 }}>
+            Control integral de inventario, compras y punto de venta.
+          </h1>
+          <p className="text-secondary small mb-4" style={{ color: '#94a3b8', lineHeight: 1.6 }}>
+            Plataforma diseñada para optimizar los procesos de almacén, emisión rápida de comprobantes y auditoría de operaciones en tiempo real.
+          </p>
 
-            {/* Capacidades clave */}
-            <div className="d-flex flex-column gap-3 mt-4 pt-2">
-              <div className="d-flex align-items-center gap-3">
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center"
-                  style={{ width: 32, height: 32, backgroundColor: 'rgba(37, 99, 235, 0.15)', color: '#60a5fa' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <span className="small text-light">Supervisión de stock en tiempo real y alertas de reposición</span>
+          <div className="d-flex flex-column gap-3">
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: 28, height: 28, backgroundColor: 'rgba(37, 99, 235, 0.2)', color: '#60a5fa' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
+              <span className="small text-light">Supervisión de stock y alertas automáticas de reposición</span>
+            </div>
 
-              <div className="d-flex align-items-center gap-3">
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center"
-                  style={{ width: 32, height: 32, backgroundColor: 'rgba(37, 99, 235, 0.15)', color: '#60a5fa' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <span className="small text-light">Punto de Venta (POS) con cálculo tributario automático (IGV)</span>
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: 28, height: 28, backgroundColor: 'rgba(37, 99, 235, 0.2)', color: '#60a5fa' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
+              <span className="small text-light">Módulo POS de facturación con desglose tributario (IGV)</span>
+            </div>
 
-              <div className="d-flex align-items-center gap-3">
-                <div
-                  className="rounded-circle d-flex align-items-center justify-content-center"
-                  style={{ width: 32, height: 32, backgroundColor: 'rgba(37, 99, 235, 0.15)', color: '#60a5fa' }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="20 6 9 17 4 12" />
-                  </svg>
-                </div>
-                <span className="small text-light">Auditoría de compras por proveedor y trazabilidad de movimientos</span>
+            <div className="d-flex align-items-center gap-3">
+              <div
+                className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                style={{ width: 28, height: 28, backgroundColor: 'rgba(37, 99, 235, 0.2)', color: '#60a5fa' }}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
               </div>
+              <span className="small text-light">Kardex valorizado y auditoría de entradas y salidas</span>
             </div>
           </div>
         </div>
 
-        {/* Footer del panel izquierdo */}
-        <div className="pt-4 border-top border-secondary border-opacity-25 d-flex align-items-center justify-content-between text-muted small" style={{ color: '#64748b' }}>
+        {/* Pie del Panel Izquierdo */}
+        <div className="d-flex align-items-center justify-content-between text-secondary pt-2" style={{ fontSize: '.75rem', color: '#64748b' }}>
           <div className="d-flex align-items-center gap-2">
-            <span className="d-inline-block rounded-circle bg-success" style={{ width: 8, height: 8 }}></span>
-            <span>Servicios de backend operativos</span>
+            <span className="rounded-circle bg-success" style={{ width: 7, height: 7 }}></span>
+            <span>Servidor operativo</span>
           </div>
           <span>Versión 1.0.0</span>
         </div>
       </div>
 
-      {/* Panel Derecho: Formulario de Acceso Limpio y Legible */}
-      <div className="col-12 col-lg-6 col-xl-5 d-flex align-items-center justify-content-center p-4 p-md-5">
-        <div style={{ maxWidth: 420, width: '100%' }}>
-          {/* Cabecera para dispositivos móviles */}
+      {/* Panel Derecho: Formulario de Login (compacto, sin scrollbar vertical) */}
+      <div
+        className="col-12 col-lg-6 col-xl-5 d-flex flex-column justify-content-center align-items-center p-3 p-sm-4 p-md-5"
+        style={{
+          height: '100vh',
+          backgroundColor: '#ffffff',
+        }}
+      >
+        <div style={{ maxWidth: 380, width: '100%' }}>
+          {/* Logo móvil (visible solo en celulares/tablets) */}
           <div className="d-flex d-lg-none align-items-center gap-3 mb-4">
             <svg width="36" height="36" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
               <rect width="40" height="40" rx="10" fill="#2563eb" />
@@ -139,18 +166,20 @@ export default function Login() {
             </div>
           </div>
 
-          {/* Títulos del Formulario */}
+          {/* Título */}
           <div className="mb-4">
-            <h2 className="h4 fw-bold text-dark mb-2" style={{ letterSpacing: '-0.01em' }}>Iniciar Sesión</h2>
+            <h2 className="h4 fw-bold text-dark mb-1" style={{ letterSpacing: '-0.01em' }}>
+              Iniciar Sesión
+            </h2>
             <p className="text-muted small mb-0">
-              Ingresa tus credenciales autorizadas para acceder al sistema.
+              Ingresa tus credenciales corporativas para continuar
             </p>
           </div>
 
-          {/* Mensaje de Error */}
+          {/* Alerta de Error */}
           {error && (
-            <div className="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-4" role="alert">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
+            <div className="alert alert-danger py-2 px-3 small d-flex align-items-center gap-2 mb-3" role="alert">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" x2="12" y1="8" y2="12" />
                 <line x1="12" x2="12.01" y1="16" y2="16" />
@@ -167,7 +196,7 @@ export default function Login() {
               </label>
               <div className="input-group">
                 <span className="input-group-text bg-white border-end-0 text-muted">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="20" height="16" x="2" y="4" rx="2" />
                     <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
                   </svg>
@@ -178,25 +207,23 @@ export default function Login() {
                   className="form-control border-start-0 ps-1"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="nombre@empresa.com"
+                  placeholder="usuario@empresa.com"
                   autoComplete="email"
                   autoFocus
                   disabled={loading}
                   required
-                  style={{ height: 44, fontSize: '0.92rem' }}
+                  style={{ height: 42, fontSize: '0.9rem' }}
                 />
               </div>
             </div>
 
-            <div className="mb-4">
-              <div className="d-flex justify-content-between align-items-center mb-1">
-                <label className="form-label small fw-semibold text-secondary mb-0">
-                  Contraseña
-                </label>
-              </div>
+            <div className="mb-3">
+              <label className="form-label small fw-semibold text-secondary mb-1">
+                Contraseña
+              </label>
               <div className="input-group">
                 <span className="input-group-text bg-white border-end-0 text-muted">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
@@ -210,7 +237,7 @@ export default function Login() {
                   autoComplete="current-password"
                   disabled={loading}
                   required
-                  style={{ height: 44, fontSize: '0.92rem' }}
+                  style={{ height: 42, fontSize: '0.9rem' }}
                 />
                 <button
                   type="button"
@@ -221,14 +248,14 @@ export default function Login() {
                   style={{ cursor: 'pointer' }}
                 >
                   {showPass ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
                       <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
                       <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
                       <line x1="2" x2="22" y1="2" y2="22" />
                     </svg>
                   ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
                       <circle cx="12" cy="12" r="3" />
                     </svg>
@@ -237,31 +264,48 @@ export default function Login() {
               </div>
             </div>
 
+            {/* Checkbox Recordar Usuario */}
+            <div className="d-flex align-items-center justify-content-between mb-4">
+              <div className="form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="rememberCheck"
+                  checked={remember}
+                  onChange={e => setRemember(e.target.checked)}
+                />
+                <label className="form-check-label small text-secondary" htmlFor="rememberCheck" style={{ cursor: 'pointer', fontSize: '.84rem' }}>
+                  Recordar mi usuario
+                </label>
+              </div>
+            </div>
+
+            {/* Botón de Envío */}
             <button
               type="submit"
               className="btn btn-primary w-100 fw-semibold d-flex align-items-center justify-content-center gap-2 shadow-sm"
               disabled={loading}
-              style={{ height: 44, fontSize: '0.95rem' }}
+              style={{ height: 42, fontSize: '0.92rem' }}
             >
               {loading ? (
                 <>
                   <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                  <span>Verificando credenciales...</span>
+                  <span>Autenticando...</span>
                 </>
               ) : (
-                <span>Ingresar al Panel</span>
+                <span>Ingresar al Sistema</span>
               )}
             </button>
           </form>
 
-          {/* Información de Seguridad Corporativa */}
-          <div className="mt-4 pt-3 border-top text-center text-muted" style={{ fontSize: '.78rem' }}>
+          {/* Pie Corporativo */}
+          <div className="mt-4 pt-3 border-top text-center text-muted" style={{ fontSize: '.75rem' }}>
             <div className="d-flex align-items-center justify-content-center gap-1 mb-1">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
                 <path d="M7 11V7a5 5 0 0 1 10 0v4" />
               </svg>
-              <span>Acceso seguro cifrado de nivel empresarial</span>
+              <span>Acceso seguro cifrado con TLS</span>
             </div>
             <span>StockMaster &copy; {new Date().getFullYear()} &bull; Todos los derechos reservados</span>
           </div>
