@@ -3,23 +3,35 @@ export interface CategoriaDB {
   nombre: string;
   descripcion?: string | null;
   fecha_creacion?: string | null;
+  fechaCreacion?: string | null;
 }
 
 export interface ProductoDB {
   id?: number;
   categoria_id?: number | null;
+  categoriaId?: number | null;
+  categoria_nombre?: string | null;
+  categoriaNombre?: string | null;
   sku?: string | null;
   nombre: string;
+  name?: string;
   descripcion?: string | null;
   precio_compra?: number | string | null;
+  precioCompra?: number | string | null;
   precio_venta?: number | string | null;
+  precioVenta?: number | string | null;
   stock?: number | string | null;
   stock_minimo?: number | string | null;
+  stockMinimo?: number | string | null;
   estado?: string;
   imagen_url?: string | null;
   imagenUrl?: string | null;
+  margen?: number | null;
+  stockLabel?: string | null;
   fecha_creacion?: string | null;
+  fechaCreacion?: string | null;
   fecha_actualizacion?: string | null;
+  fechaActualizacion?: string | null;
   categorias?: { id?: number; nombre?: string } | null;
 }
 

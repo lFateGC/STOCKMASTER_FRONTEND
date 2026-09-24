@@ -1,98 +1,114 @@
 import api from './api';
-import type { VentaDB, DetalleVentaDB, MetodoPagoDB } from '../types/venta';
-import { generateTicketNumber } from '../utils/formatters';
+import type { VentaDB, MetodoPagoDB, DetalleVentaDB } from '../types/venta';
 import { IGV_RATE } from '../utils/constants';
 
-export interface SalesFilters {
-  from?: string;
-  to?: string;
-  vendedorId?: string;
+function normalizeVenta(v: any): VentaDB {
+  if (!v) return v;
+  const fecha = v.fechaVenta ?? v.fecha_venta ?? v.date;
+  return {
+    ...v,
+    id: v.id,
+    numeroBoleta: v.numeroBoleta ?? v.numero_boleta,
+    numero_boleta: v.numeroBoleta ?? v.numero_boleta,
+    vendedorId: v.vendedorId ?? v.vendedor_id,
+    vendedor_id: v.vendedorId ?? v.vendedor_id,
+    vendedorNombre: v.vendedorNombre ?? v.vendedor_nombre,
+    vendedor_nombre: v.vendedorNombre ?? v.vendedor_nombre,
+    cliente: v.cliente ?? v.customerName ?? '',
+    metodoPagoId: v.metodoPagoId ?? v.metodo_pago_id,
+    metodo_pago_id: v.metodoPagoId ?? v.metodo_pago_id,
+    metodoPagoNombre: v.metodoPagoNombre ?? v.metodo_pago_nombre,
+    metodo_pago_nombre: v.metodoPagoNombre ?? v.metodo_pago_nombre,
+    subtotal: Number(v.subtotal || 0),
+    igv: Number(v.igv || 0),
+    descuento: Number(v.descuento || 0),
+    total: Number(v.total || 0),
+    estado: v.estado || 'completada',
+    fechaVenta: fecha,
+    fecha_venta: fecha,
+    observaciones: v.observaciones,
+    detalles: (v.detalles || []).map((d: any) => ({
+      ...d,
+      id: d.id,
+      ventaId: d.ventaId ?? d.venta_id,
+      venta_id: d.ventaId ?? d.venta_id,
+      productoId: d.productoId ?? d.producto_id,
+      producto_id: d.productoId ?? d.producto_id,
+      productoNombre: d.productoNombre ?? d.producto_nombre ?? d.productName,
+      producto_nombre: d.productoNombre ?? d.producto_nombre ?? d.productName,
+      sku: d.sku,
+      cantidad: d.cantidad,
+      precioUnitario: Number(d.precioUnitario ?? d.precio_unitario ?? d.unitPrice ?? 0),
+      precio_unitario: Number(d.precioUnitario ?? d.precio_unitario ?? d.unitPrice ?? 0),
+      subtotal: Number(d.subtotal || 0),
+    })),
+  };
 }
 
-export interface SaleItemInput {
-  productoId: number;
-  cantidad: number;
-  precioUnitario: number;
+export function calcularTotalesVenta(
+  items: { precioUnitario: number; cantidad: number }[],
+  descuento = 0
+): { subtotal: number; igv: number; total: number } {
+  const sumaItems = items.reduce((acc, i) => acc + i.precioUnitario * i.cantidad, 0);
+  const total = Math.max(0, sumaItems - descuento);
+  const subtotal = total / (1 + IGV_RATE);
+  const igv = total - subtotal;
+  return {
+    subtotal: Math.round(subtotal * 100) / 100,
+    igv: Math.round(igv * 100) / 100,
+    total: Math.round(total * 100) / 100,
+  };
 }
 
-export interface CreateSaleParams {
-  vendedorId: string;
+export async function getSales(): Promise<VentaDB[]> {
+  const { data } = await api.get('/ventas');
+  return (data || []).map(normalizeVenta);
+}
+
+export async function getSaleById(id: number): Promise<VentaDB> {
+  const { data } = await api.get(`/ventas/${id}`);
+  return normalizeVenta(data);
+}
+
+export async function getSaleDetail(ventaId: number): Promise<DetalleVentaDB[]> {
+  const venta = await getSaleById(ventaId);
+  return venta.detalles || [];
+}
+
+export async function createSale(params: {
+  vendedorId?: number | string;
   cliente: string;
   metodoPagoId?: number | null;
   descuento?: number;
   observaciones?: string | null;
-  items: SaleItemInput[];
+  items: { productoId: number; cantidad: number; precioUnitario: number }[];
+}): Promise<{ venta: VentaDB; numeroBoleta: string }> {
+  const payload = {
+    cliente: params.cliente,
+    metodoPagoId: params.metodoPagoId || null,
+    descuento: params.descuento || 0,
+    observaciones: params.observaciones || null,
+    items: params.items.map(i => ({
+      productoId: i.productoId,
+      cantidad: i.cantidad,
+      precioUnitario: i.precioUnitario,
+    })),
+  };
+
+  const { data } = await api.post('/ventas', payload);
+  const normalized = normalizeVenta(data);
+  return {
+    venta: normalized,
+    numeroBoleta: normalized.numeroBoleta || normalized.numero_boleta || '',
+  };
 }
 
-export function calcularTotalesVenta(
-  items: Array<{ precioUnitario: number; cantidad: number }>,
-  descuento: number = 0
-): { subtotal: number; igv: number; total: number } {
-  const base = items.reduce((a, i) => a + i.precioUnitario * i.cantidad, 0);
-  const subtotal = +(base - Number(descuento)).toFixed(2);
-  const igv = +(subtotal * IGV_RATE).toFixed(2);
-  const total = +(subtotal + igv).toFixed(2);
-  return { subtotal, igv, total };
+export async function anularSale(id: number): Promise<VentaDB> {
+  const { data } = await api.patch(`/ventas/${id}/anular`);
+  return normalizeVenta(data);
 }
 
 export async function getPaymentMethods(): Promise<MetodoPagoDB[]> {
-  const { data } = await api.get('/metodos_pago?order=nombre&select=*');
+  const { data } = await api.get('/metodos-pago');
   return data || [];
 }
-
-export async function getSales(filtros: SalesFilters = {}): Promise<VentaDB[]> {
-  let url = '/ventas?select=*,perfiles(nombre_completo),metodos_pago(nombre)&order=fecha_venta.desc';
-  if (filtros.vendedorId) url += `&vendedor_id=eq.${filtros.vendedorId}`;
-  if (filtros.from)       url += `&fecha_venta=gte.${filtros.from}`;
-  if (filtros.to)         url += `&fecha_venta=lte.${filtros.to}T23:59:59`;
-
-  const { data } = await api.get(url);
-  return data || [];
-}
-
-export async function getSaleDetail(ventaId: number): Promise<DetalleVentaDB[]> {
-  const { data } = await api.get(
-    `/detalle_ventas?venta_id=eq.${ventaId}&select=*,productos(nombre,sku)`
-  );
-  return data || [];
-}
-
-export async function createSale({
-  vendedorId,
-  cliente,
-  metodoPagoId = null,
-  descuento = 0,
-  observaciones = null,
-  items,
-}: CreateSaleParams): Promise<{ venta: VentaDB; detalles: DetalleVentaDB[] }> {
-  const { subtotal, igv, total } = calcularTotalesVenta(items, descuento);
-
-  const { data: ventaRows } = await api.post('/ventas', {
-    numero_boleta:  generateTicketNumber(),
-    vendedor_id:    vendedorId,
-    cliente,
-    metodo_pago_id: metodoPagoId ?? null,
-    subtotal,
-    igv,
-    descuento:      Number(descuento),
-    total,
-    estado:         'completada',
-    observaciones:  observaciones ?? null,
-  });
-  const venta = ventaRows[0];
-
-  const detallePayload = items.map(i => ({
-    venta_id:        venta.id,
-    producto_id:     i.productoId,
-    cantidad:        i.cantidad,
-    precio_unitario: i.precioUnitario,
-    subtotal:        +(i.cantidad * i.precioUnitario).toFixed(2),
-  }));
-
-  const { data: detalleRows } = await api.post('/detalle_ventas', detallePayload);
-
-  return { venta, detalles: detalleRows || [] };
-}
-
-export const cancelSale = (ventaId: number) =>
-  api.patch(`/ventas?id=eq.${ventaId}`, { estado: 'anulada' });

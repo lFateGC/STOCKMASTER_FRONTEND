@@ -1,40 +1,52 @@
 export interface MetodoPagoDB {
-  id?: number;
+  id: number;
   nombre: string;
 }
 
-export interface VentaDB {
+export interface DetalleVentaDB {
   id?: number;
-  numero_boleta: string;
-  vendedor_id: string;
+  venta_id?: number | null;
+  ventaId?: number | null;
+  producto_id?: number;
+  productoId?: number;
+  producto_nombre?: string;
+  productoNombre?: string;
+  sku?: string | null;
+  cantidad: number;
+  precio_unitario?: number;
+  precioUnitario: number;
+  subtotal: number;
+}
+
+export interface VentaDB {
+  id: number;
+  numero_boleta?: string;
+  numeroBoleta?: string;
+  vendedor_id?: number | string;
+  vendedorId?: number | string;
+  vendedor_nombre?: string;
+  vendedorNombre?: string;
   cliente: string;
   metodo_pago_id?: number | null;
+  metodoPagoId?: number | null;
+  metodo_pago_nombre?: string;
+  metodoPagoNombre?: string;
   subtotal: number;
   igv: number;
   descuento?: number;
   total: number;
-  estado?: 'completada' | 'anulada' | string;
-  fecha_venta?: string | null;
+  estado: string;
+  fecha_venta?: string;
+  fechaVenta?: string;
   observaciones?: string | null;
-  perfiles?: { nombre_completo?: string } | null;
-  metodos_pago?: { nombre?: string } | null;
-}
-
-export interface DetalleVentaDB {
-  id?: number | null;
-  venta_id?: number | null;
-  producto_id: number;
-  cantidad: number;
-  precio_unitario: number;
-  subtotal: number;
-  productos?: { nombre?: string } | null;
+  detalles?: DetalleVentaDB[];
 }
 
 export interface CarritoVentaItem {
   productoId: number;
   productoNombre: string;
-  sku?: string | null;
-  precioUnitario: number;
+  sku: string | null;
   cantidad: number;
-  stockMax: number;
+  precioUnitario: number;
+  stockDisponible: number;
 }

@@ -1,46 +1,60 @@
 import api from './api';
-import type { MovimientoStockDB, TipoMovimiento } from '../types/movimiento';
+import type { MovimientoStockDB } from '../types/movimiento';
 
-export interface MovementFilters {
+function normalizeMovimiento(m: any): MovimientoStockDB {
+  if (!m) return m;
+  const fecha = m.fechaMovimiento ?? m.fecha_movimiento ?? m.date;
+  return {
+    ...m,
+    id: m.id,
+    productoId: m.productoId ?? m.producto_id,
+    producto_id: m.productoId ?? m.producto_id,
+    productoNombre: m.productoNombre ?? m.producto_nombre ?? m.productName,
+    producto_nombre: m.productoNombre ?? m.producto_nombre ?? m.productName,
+    sku: m.sku || null,
+    usuarioId: m.usuarioId ?? m.usuario_id,
+    usuario_id: m.usuarioId ?? m.usuario_id,
+    usuarioNombre: m.usuarioNombre ?? m.usuario_nombre ?? m.user,
+    usuario_nombre: m.usuarioNombre ?? m.usuario_nombre ?? m.user,
+    tipo: m.tipo ?? m.type ?? 'ajuste',
+    cantidad: m.cantidad ?? m.quantity ?? 0,
+    motivo: m.motivo ?? m.reason ?? null,
+    fechaMovimiento: fecha,
+    fecha_movimiento: fecha,
+  };
+}
+
+export async function getMovements(params?: {
   productoId?: number;
   tipo?: string;
   from?: string;
   to?: string;
-}
+}): Promise<MovimientoStockDB[]> {
+  const queryParams = new URLSearchParams();
+  if (params?.productoId) queryParams.append('productoId', String(params.productoId));
+  if (params?.tipo) queryParams.append('tipo', params.tipo);
+  if (params?.from) queryParams.append('from', params.from);
+  if (params?.to) queryParams.append('to', params.to);
 
-export interface CreateMovementParams {
-  productoId: number;
-  usuarioId: string;
-  tipo: TipoMovimiento;
-  cantidad: number;
-  motivo?: string | null;
-}
-
-export async function getMovements(filtros: MovementFilters = {}): Promise<MovimientoStockDB[]> {
-  let url = '/movimientos_stock?select=*,productos(nombre,sku),perfiles(nombre_completo)&order=fecha_movimiento.desc';
-  if (filtros.productoId) url += `&producto_id=eq.${filtros.productoId}`;
-  if (filtros.tipo)       url += `&tipo=eq.${filtros.tipo}`;
-  if (filtros.from)       url += `&fecha_movimiento=gte.${filtros.from}`;
-  if (filtros.to)         url += `&fecha_movimiento=lte.${filtros.to}T23:59:59`;
-
+  const url = queryParams.toString() ? `/movimientos?${queryParams.toString()}` : '/movimientos';
   const { data } = await api.get(url);
-  return data || [];
+  return (data || []).map(normalizeMovimiento);
 }
 
-export async function createMovement({
-  productoId,
-  usuarioId,
-  tipo,
-  cantidad,
-  motivo = null,
-}: CreateMovementParams): Promise<MovimientoStockDB> {
+export async function createMovement(movimiento: {
+  productoId: number;
+  usuarioId?: number | string;
+  tipo: string;
+  cantidad: number;
+  motivo?: string;
+}): Promise<MovimientoStockDB> {
   const payload = {
-    producto_id: productoId,
-    usuario_id:  usuarioId,
-    tipo,
-    cantidad:    Math.abs(cantidad),
-    motivo:      motivo ?? null,
+    productoId: movimiento.productoId,
+    tipo: movimiento.tipo.toLowerCase(),
+    cantidad: movimiento.cantidad,
+    motivo: movimiento.motivo || null,
   };
-  const { data } = await api.post('/movimientos_stock', payload);
-  return data[0];
+
+  const { data } = await api.post('/movimientos', payload);
+  return normalizeMovimiento(data);
 }

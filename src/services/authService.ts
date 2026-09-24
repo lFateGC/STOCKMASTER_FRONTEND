@@ -1,9 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './api';
-import type { PerfilDB, UserSession, LoginResult } from '../types/auth';
+import api from './api';
+import type { UserSession, LoginResult } from '../types/auth';
 import { STORAGE_KEYS } from '../utils/constants';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 export function getSession(): UserSession | null {
   try {
@@ -19,70 +16,57 @@ export function clearSession(): void {
 }
 
 export async function login(correo: string, password: string): Promise<LoginResult> {
-  let data, error;
-
   try {
-    ({ data, error } = await supabase.auth.signInWithPassword({ email: correo, password }));
-  } catch (e: any) {
-    console.error('❌ Login error:', e.message);
-    return { success: false, error: 'No se pudo conectar con el servidor. Verifica tu conexión.' };
+    const { data } = await api.post('/auth/login', {
+      correo: correo.trim(),
+      password,
+    });
+
+    if (!data?.token) {
+      return { success: false, error: 'Respuesta inválida del servidor de autenticación.' };
+    }
+
+    const rolNormalizado = (data.rol || data.role || 'vendedor').toLowerCase();
+
+    const session: UserSession = {
+      userId: data.userId,
+      correo: data.correo || correo,
+      username: data.username || correo.split('@')[0],
+      displayName: data.displayName || data.nombreCompleto || correo,
+      rol: rolNormalizado,
+      role: rolNormalizado,
+      token: data.token,
+      accessToken: data.token,
+      avatarUrl: data.avatarUrl || null,
+    };
+
+    localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+    return { success: true, session };
+  } catch (error: any) {
+    const message =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      error?.message ||
+      'Credenciales incorrectas o el servicio no se encuentra disponible.';
+    return { success: false, error: message };
   }
-
-  if (error || !data?.user) {
-    return { success: false, error: error?.message || 'Credenciales incorrectas.' };
-  }
-
-  const { data: row, error: pErr } = await supabase
-    .from('perfiles')
-    .select('id, nombre_completo, rol, correo, estado')
-    .eq('id', data.user.id)
-    .single();
-
-  if (pErr || !row) {
-    await supabase.auth.signOut();
-    return { success: false, error: 'Perfil no encontrado. Contacta al administrador.' };
-  }
-
-  const perfil = row as PerfilDB;
-
-  if (perfil.estado === 'inactivo') {
-    await supabase.auth.signOut();
-    return { success: false, error: 'Tu cuenta está inactiva. Contacta al administrador.' };
-  }
-
-  const session: UserSession = {
-    userId:      perfil.id,
-    correo:      perfil.correo || data.user.email || '',
-    username:    (perfil.correo || data.user.email || '').split('@')[0],
-    displayName: perfil.nombre_completo,
-    rol:         perfil.rol,
-    role:        perfil.rol,
-    accessToken: data.session?.access_token,
-  };
-
-  localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
-  return { success: true, session };
 }
 
 export async function logout(): Promise<void> {
-  await supabase.auth.signOut();
   clearSession();
 }
 
-export async function updateDisplayName(userId: string, nombreCompleto: string): Promise<void> {
-  const { error } = await supabase
-    .from('perfiles')
-    .update({ nombre_completo: nombreCompleto })
-    .eq('id', userId);
-  if (error) throw error;
-
+export async function updateDisplayName(userId: number | string, nombreCompleto: string): Promise<void> {
+  const { data } = await api.put(`/usuarios/${userId}`, { nombreCompleto });
   const session = getSession();
   if (session) {
-    localStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify({ ...session, displayName: nombreCompleto }));
+    localStorage.setItem(
+      STORAGE_KEYS.SESSION,
+      JSON.stringify({ ...session, displayName: data.nombreCompleto || nombreCompleto })
+    );
   }
 }
 
-export async function changePassword(newPassword: string): Promise<void> {
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) throw error;
+export async function changePassword(userId: number | string, newPassword: string): Promise<void> {
+  await api.put(`/usuarios/${userId}`, { password: newPassword });
 }

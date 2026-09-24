@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, type FormEvent } from 'react';
+import { useState, useRef, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../services/authService';
 import { useAuth } from '../hooks/useAuth';
@@ -9,27 +9,9 @@ export default function Login() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [connectionError, setConnectionError] = useState(false);
   const emailRef = useRef<HTMLInputElement>(null);
   const { setSession } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const checkConnection = async () => {
-      try {
-        const url = import.meta.env.VITE_SUPABASE_URL || 'https://wgxyrjavgwzebjvajqes.supabase.co';
-        const key = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-        const response = await fetch(`${url}/auth/v1/health`, {
-          method: 'GET',
-          headers: { apikey: key },
-        });
-        setConnectionError(!response.ok);
-      } catch {
-        setConnectionError(true);
-      }
-    };
-    checkConnection();
-  }, []);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -73,12 +55,6 @@ export default function Login() {
 
         <h2 className="h5 mb-1 text-white fw-semibold">Iniciar Sesión</h2>
         <p className="text-muted mb-4 small">Ingrese sus credenciales corporativas para continuar</p>
-
-        {connectionError && (
-          <div className="alert alert-warning py-2 small" role="alert">
-            Aviso: Verificando la conectividad con el servidor de autenticación...
-          </div>
-        )}
 
         {error && <div className="alert alert-danger py-2 small">{error}</div>}
 

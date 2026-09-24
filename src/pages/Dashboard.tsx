@@ -27,12 +27,19 @@ export default function Dashboard() {
   if (loading) return <Loader />;
 
   const today = new Date().toISOString().slice(0, 10);
-  const ventasHoy = sales.filter(s => s.fecha_venta && s.fecha_venta.slice(0, 10) === today);
+  const ventasHoy = sales.filter(s => {
+    const f = s.fechaVenta || s.fecha_venta;
+    return f && f.slice(0, 10) === today;
+  });
   const ingresoHoy = ventasHoy.reduce((a, s) => a + Number(s.total || 0), 0);
   const totalIngr  = sales.reduce((a, s) => a + Number(s.total || 0), 0);
   const totalIGV   = sales.reduce((a, s) => a + Number(s.igv || 0), 0);
 
-  const lowStock = products.filter(p => Number(p.stock || 0) > 0 && Number(p.stock || 0) <= Number(p.stock_minimo || 5));
+  const lowStock = products.filter(p => {
+    const st = Number(p.stock || 0);
+    const min = Number(p.stockMinimo ?? p.stock_minimo ?? 5);
+    return st > 0 && st <= min;
+  });
   const outStock = products.filter(p => Number(p.stock || 0) === 0);
 
   const kpis = [
@@ -189,7 +196,7 @@ export default function Dashboard() {
             <tbody>
               {sales.slice(0, 8).map(s => (
                 <tr key={s.id}>
-                  <td className="text-muted small font-monospace">{s.numero_boleta}</td>
+                  <td className="text-muted small font-monospace">{s.numeroBoleta || s.numero_boleta}</td>
                   <td className="fw-semibold small text-dark">{s.cliente}</td>
                   <td className="text-muted small text-end">{formatCurrency(Number(s.subtotal || 0))}</td>
                   <td className="text-muted small text-end">{formatCurrency(Number(s.igv || 0))}</td>
@@ -199,7 +206,7 @@ export default function Dashboard() {
                       {s.estado === 'completada' ? 'Completada' : 'Anulada'}
                     </span>
                   </td>
-                  <td className="text-muted small">{formatDateTime(s.fecha_venta)}</td>
+                  <td className="text-muted small">{formatDateTime(s.fechaVenta || s.fecha_venta)}</td>
                 </tr>
               ))}
               {sales.length === 0 && (
