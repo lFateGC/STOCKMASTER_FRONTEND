@@ -282,9 +282,6 @@ export default function MovimientosStock() {
             <ArrowLeftRight className="text-primary" size={24} />
             Movimientos de Stock (Kardex)
           </h1>
-          <p className="text-muted mb-0 small">
-            Trazabilidad automática de compras (+), ventas (-) y devoluciones (+) con referencia de origen.
-          </p>
         </div>
         <button
           type="button"

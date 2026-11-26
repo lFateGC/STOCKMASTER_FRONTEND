@@ -82,7 +82,7 @@ export async function createSale(params: {
   descuento?: number;
   observaciones?: string | null;
   items: { productoId: number; cantidad: number; precioUnitario: number }[];
-}): Promise<{ venta: VentaDB; numeroBoleta: string }> {
+}): Promise<VentaDB & { venta: VentaDB; numeroBoleta: string }> {
   const payload = {
     cliente: params.cliente,
     metodoPagoId: params.metodoPagoId || null,
@@ -98,6 +98,7 @@ export async function createSale(params: {
   const { data } = await api.post('/ventas', payload);
   const normalized = normalizeVenta(data);
   return {
+    ...normalized,
     venta: normalized,
     numeroBoleta: normalized.numeroBoleta || normalized.numero_boleta || '',
   };

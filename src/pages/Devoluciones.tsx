@@ -217,9 +217,6 @@ export default function Devoluciones() {
             <RotateCcw className="text-warning" size={28} />
             Gestión de Devoluciones
           </h1>
-          <p className="text-muted small mb-0">
-            Reingreso a inventario o registro de merma con trazabilidad completa en Kardex.
-          </p>
         </div>
 
         <div className="d-flex align-items-center gap-2">

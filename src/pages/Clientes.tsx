@@ -224,7 +224,6 @@ export default function Clientes() {
       <div className="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
         <div>
           <h1 className="h4 mb-1 fw-bold text-dark">Gestión de Clientes</h1>
-          <p className="text-muted mb-0 small">Directorio de clientes comerciales para emisión de comprobantes (DNI / RUC)</p>
         </div>
         <button
           type="button"
