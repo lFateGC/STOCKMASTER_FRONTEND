@@ -142,9 +142,6 @@ export default function HistorialVentas() {
             <Receipt className="text-primary" size={28} />
             Historial de Comprobantes
           </h1>
-          <p className="text-muted small mb-0">
-            Registro cronológico, auditoría de boletas emitidas y control de anulaciones.
-          </p>
         </div>
 
         <div className="d-flex align-items-center gap-2">

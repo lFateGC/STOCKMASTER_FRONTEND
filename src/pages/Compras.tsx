@@ -192,7 +192,6 @@ export default function Compras() {
       <div className="d-flex align-items-center justify-content-between mb-4">
         <div>
           <h1 className="h4 mb-0 fw-bold text-dark">Gestión de Compras</h1>
-          <p className="text-muted mb-0 small">Emisión de órdenes de abastecimiento y recepción de mercadería</p>
         </div>
       </div>
 

@@ -327,9 +327,6 @@ export default function Ventas() {
             <ShoppingCart className="text-primary" size={28} />
             Terminal de Ventas (POS)
           </h1>
-          <p className="text-muted small mb-0">
-            Catálogo interactivo separado con facturación instantánea y control de existencias.
-          </p>
         </div>
 
         <div className="d-flex align-items-center gap-2">

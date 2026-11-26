@@ -1,0 +1,9 @@
+.cash-flow { max-width: 1440px; margin: 0 auto; }
+.cash-flow .cash-hero { background: #fff; color: var(--text-main); padding: 1.25rem; border: 1px solid var(--border-color); border-radius: .75rem; }
+.cash-flow .cash-hero h1 { color: var(--text-main); }
+.cash-flow .card { border: 1px solid var(--border-color); border-radius: .75rem; box-shadow: none; }
+.cash-flow h2 svg { vertical-align: -3px; margin-right: .35rem; }
+.cash-flow .cash-table { font-size: .85rem; white-space: nowrap; }
+.cash-flow .cash-concept { min-width: 150px; max-width: 360px; overflow-wrap: anywhere; }
+.cash-flow input, .cash-flow select { min-height: 42px; }
+@media (max-width: 575px) { .cash-flow .cash-hero { padding: 1rem; } }
